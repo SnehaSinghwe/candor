@@ -99,7 +99,7 @@ class Memory:
 
 def run(questions_path, out_path, data_dir="data"):
     mem = Memory(data_dir)
-    with open(out_path, "w") as f:
-        for line in open(questions_path):
+    with open(out_path, "w", encoding="utf-8") as f:
+        for line in open(questions_path, encoding="utf-8"):
             if line.strip():
                 f.write(json.dumps(mem.answer(json.loads(line)), ensure_ascii=False) + "\n")

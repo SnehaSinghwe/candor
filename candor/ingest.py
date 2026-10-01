@@ -27,7 +27,7 @@ def load(data_dir):
     d = Path(data_dir)
     units, deleted, edits = [], {}, {}
     for f in sorted((d / "native/meetings").glob("*.json")):
-        m = json.loads(f.read_text())
+        m = json.loads(f.read_text(encoding="utf-8"))
         start = dt(m["start"])
         for i, s in enumerate(m["segments"]):
             who = s.get("speaker_name") or ""
@@ -38,15 +38,15 @@ def load(data_dir):
                               meta=dict(conf=s.get("speaker_confidence"), unidentified=unk,
                                         channel=s.get("channel"), date=m["start"][:10],
                                         participants=m.get("participants_known", []))))
-    for line in open(d / "native/dictation/dictations.jsonl"):
+    for line in open(d / "native/dictation/dictations.jsonl", encoding="utf-8"):
         x = json.loads(line)
         txt = x["cleaned_text"] or x.get("raw_transcript", "")
         units.append(Unit(x["id"], x["id"], "dictation", dt(x["timestamp"]), txt, "Alex Rivera",
                           f"{x['mode']} {x['target_app']} {x['target_context']} {x['delivery_state']}",
                           meta=dict(state=x["delivery_state"], mode=x["mode"], raw=x.get("raw_transcript", ""))))
-    users = {u["id"]: u for u in json.load(open(d / "connectors/slack/users.json"))}
-    chans = {c["id"]: c for c in json.load(open(d / "connectors/slack/channels.json"))}
-    for line in open(d / "connectors/slack/messages.jsonl"):
+    users = {u["id"]: u for u in json.load(open(d / "connectors/slack/users.json", encoding="utf-8"))}
+    chans = {c["id"]: c for c in json.load(open(d / "connectors/slack/channels.json", encoding="utf-8"))}
+    for line in open(d / "connectors/slack/messages.jsonl",encoding="utf-8"):
         x = json.loads(line)
         t = dt(x["ts"])
         if x.get("subtype") == "message_deleted":
@@ -63,12 +63,12 @@ def load(data_dir):
         units.append(Unit(x["id"], x["id"], "slack", t, x["text"], who,
                           f"slack {chname}{' dm' if ch.get('is_dm') else ''}", parent=x.get("thread_parent_id") or "",
                           meta=dict(channel=x["channel_id"], user=x.get("user"), bot=x.get("subtype") == "bot_message")))
-    for line in open(d / "connectors/gmail/messages.jsonl"):
+    for line in open(d / "connectors/gmail/messages.jsonl", encoding="utf-8"):
         x = json.loads(line)
         units.append(Unit(x["id"], x["id"], "email", dt(x["date"]), x["body"], x["from"],
                           f"email {x['subject']} to {' '.join(x['to'])} cc {' '.join(x['cc'])}",
                           meta=dict(thread=x.get("thread_id"), subject=x["subject"])))
-    for line in open(d / "connectors/google_calendar/events.jsonl"):
+    for line in open(d / "connectors/google_calendar/events.jsonl", encoding="utf-8"):
         x = json.loads(line)
         st, en = x["start"], x["end"]
         when = f"{st.get('dateTime') or st.get('date')} to {en.get('dateTime') or en.get('date')}"
@@ -78,12 +78,12 @@ def load(data_dir):
                           "calendar " + x["summary"], meta=dict(cancelled=x["status"] == "cancelled",
                                                                 start=st.get("dateTime") or st.get("date"))))
     for f in sorted((d / "connectors/codex/sessions").glob("*.jsonl")):
-        ev = [json.loads(l) for l in open(f)]
+        ev = [json.loads(l) for l in open(f, encoding="utf-8")]
         meta, body = ev[0], ev[1:]
         text = "\n".join(f"{e.get('role', e.get('tool', e['type']))}: {e.get('content') or e.get('input', '')}" for e in body)
         units.append(Unit(meta["id"], meta["id"], "codex", dt(body[-1]["timestamp"] if body else meta["started_at"]),
                           text, "Alex Rivera", f"codex {meta.get('repo')}"))
-    for c in json.load(open(d / "connectors/chatgpt/conversations.json")):
+    for c in json.load(open(d / "connectors/chatgpt/conversations.json", encoding="utf-8")):
         for i, m in enumerate(c["messages"]):
             units.append(Unit(m["id"], c["id"], "chatgpt", dt(m["create_time"]), m["content"],
                               "Alex Rivera" if m["role"] == "user" else "ChatGPT", f"chatgpt {c['title']} {m['role']}", seq=i))

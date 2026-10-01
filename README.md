@@ -3,7 +3,7 @@
 Run everything: `./run_all.sh` (Python 3.10+). Core needs only the standard library; Gemini needs `pip install -r requirements.txt`. Outputs land in `out/`.
 
 ## LLM provider
-Google Gemini, via the official `google-genai` SDK. Default model `gemini-2.5-flash`. The LLM only writes the final answer from
+Google Gemini, via the official `google-genai` SDK. Default model `gemini-3.5-flash-lite`. The LLM only writes the final answer from
 already-retrieved evidence; BM25 retrieval, time filtering and safety filters are unchanged and need no key.
 (Migrated from an earlier Anthropic-based writer; nothing in the project requires Anthropic now.)
 
@@ -11,7 +11,7 @@ already-retrieved evidence; BM25 retrieval, time filtering and safety filters ar
 | variable | meaning |
 |---|---|
 | `GEMINI_API_KEY` | your Gemini API key (never commit it) |
-| `GEMINI_MODEL` | model name, default `gemini-2.5-flash` |
+| `GEMINI_MODEL` | model name, default `gemini-3.5-flash-lite` (model access varies by account) |
 
 ### Setup
 ```
@@ -56,12 +56,14 @@ question. Retrieval and actions are unaffected. Output JSONL schema is identical
 |---|---|
 | Retrieval (top 10 has everything, nothing forbidden) | **96%** (26/27), top-5 exact 76%, MRR 0.69, 0 forbidden records |
 | Answers, no-key fallback (measured) | strict 33.3%, lenient 37.0% (judge=none) |
-| Answers with Gemini | **not measured**: no Gemini key was available when this was written |
+| Answers with Gemini `gemini-3.5-flash-lite` (measured, 27 train questions, `--judge none`) | strict **92.6%**, lenient 100%, 2 unverified, 0 hard failures; citations recall 0.84, precision 0.93; both expected abstentions correct |
 | Actions train | 12/12 (100%), arg accuracy 100% |
 | Actions, my 6 extra held-out cases | 6/6 |
 
 ## What didn't work / known limits
-- **No Gemini key was available while building.** The Gemini call itself has not been run against the real API. Tested only: SDK import and config construction, mocked responses (valid, malformed, abstain, uncited, API exception), env-var handling, and the failure path with a dummy key. Answer scores above are the extractive fallback, not Gemini.
+- **Gemini score is deterministic checks only** (`--judge none`). Two answers (MEM-TR-01, MEM-TR-13) are "unverified" because they also mention the older value; no LLM judge was run. The numbers above were measured on the author's machine with a real key; the extractive no-key fallback scores 33.3% strict on the same set.
+- **Model availability varies by account.** In testing `gemini-2.5-flash` and `gemini-3.1-flash` returned 404 and `gemini-3.8-flash` hit a quota limit (429); `gemini-3.5-flash-lite` worked. If a grader's key lacks the model, the pipeline prints a `[candor] Gemini call failed` line and uses the fallback. Set `GEMINI_MODEL` to change it.
+- **Windows:** all file reads/writes use explicit UTF-8 (default cp1252 broke Slack ingestion). Run `bash run_all.sh` from Git Bash.
 - MEM-TR-21 ("why did the launch slip") fails: the reason is phrased as "geocoding regression" and the question shares no vocabulary with it. A dense or LLM query rewrite would fix it.
 - My first version put whole-meeting dates in the query and the planning meeting dominated; date tokens are now down-weighted.
 - Abstention is crude (unseen words only). MEM-TR-16 (Harbor + SOC 2) is not abstained offline because "SOC" appears elsewhere.
@@ -69,4 +71,4 @@ question. Retrieval and actions are unaffected. Output JSONL schema is identical
 - Retrieval tuning used the train questions, so expect the hidden score to be lower.
 
 ## Tools and cost
-Built with an AI coding assistant in a chat session. Answer writer: Google Gemini (`gemini-2.5-flash`, `google-genai` SDK), not yet run for reported scores. No paid API calls were made while building.
+Built with an AI coding assistant in a chat session. Answer writer: Google Gemini (`gemini-3.5-flash-lite`, `google-genai` SDK). Gemini free/low tier used; cost not tracked.

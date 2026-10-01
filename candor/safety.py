@@ -33,7 +33,7 @@ You are given EVIDENCE RECORDS retrieved from their memory as of a cutoff time (
 9. Keep the answer under 80 words. In "sources" list only the record ids you actually relied on.
 Reply with JSON only: {"answer": string, "sources": [record ids], "abstain": boolean}"""
 
-DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+DEFAULT_GEMINI_MODEL = "gemini-3.5-flash-lite"   # the model verified working in a real run; override with GEMINI_MODEL
 _warned = set()
 
 
@@ -51,7 +51,7 @@ def _diag(kind, msg):
 def _load_dotenv(path=".env"):
     """Tiny stdlib .env reader so `python3 run.py` works the same as ./run_all.sh. Never overrides real env vars."""
     try:
-        for line in open(path):
+        for line in open(path, encoding="utf-8"):
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)

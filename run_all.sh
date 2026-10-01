@@ -2,7 +2,7 @@
 # One command. Python 3.10+, stdlib only. Usage: ./run_all.sh [questions.jsonl] [out.jsonl]
 set -e
 Q=${1:-evals/memory_train.jsonl}; OUT=${2:-out/memory_train_answers.jsonl}
-[ -f .env ] && set -a && . ./.env && set +a
+if [ -f .env ]; then set -a; . <(tr -d '\r' < .env); set +a; fi
 mkdir -p out
 python3 run.py "$Q" "$OUT" data
 python3 run_actions.py evals/actions_train.jsonl out/actions_train_predictions.jsonl data

@@ -21,17 +21,17 @@ class Planner:
     def __init__(self, data_dir="data"):
         d = Path(data_dir)
         self.mem = Memory(data_dir)
-        self.users = [u for u in json.load(open(d / "connectors/slack/users.json")) if u.get("email")]
-        self.chans = json.load(open(d / "connectors/slack/channels.json"))
+        self.users = [u for u in json.load(open(d / "connectors/slack/users.json", encoding="utf-8")) if u.get("email")]
+        self.chans = json.load(open(d / "connectors/slack/channels.json", encoding="utf-8"))
         self.contacts = {u["real_name"]: u["email"] for u in self.users}
-        for line in open(d / "connectors/gmail/messages.jsonl"):
+        for line in open(d / "connectors/gmail/messages.jsonl", encoding="utf-8"):
             x = json.loads(line)
             for f in [x["from"], *x["to"], *x["cc"]]:
                 m = re.match(r"\s*(.+?)\s*<(.+?)>", f)
                 if m and not m.group(2).startswith(("no-reply", "digest")):
                     self.contacts.setdefault(m.group(1), m.group(2))
         self.slack_ids = {u["real_name"]: u["id"] for u in self.users}
-        self.events = [json.loads(l) for l in open(d / "connectors/google_calendar/events.jsonl")]
+        self.events = [json.loads(l) for l in open(d / "connectors/google_calendar/events.jsonl", encoding="utf-8")]
 
     # ---- resolution -------------------------------------------------------------------------------
     def people(self, first):
@@ -249,8 +249,8 @@ class Planner:
 
 def run(path, out, data_dir="data"):
     pl = Planner(data_dir)
-    with open(out, "w") as f:
-        for line in open(path):
+    with open(out, "w", encoding="utf-8") as f:
+        for line in open(path, encoding="utf-8"):
             if line.strip():
                 q = json.loads(line)
                 f.write(json.dumps({"id": q["id"], "actions": pl.plan(q["command"], q["as_of"])}, ensure_ascii=False) + "\n")

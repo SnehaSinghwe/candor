@@ -1,3 +1,6 @@
 .env
 __pycache__/
 results_*.json
+.venv/
+out_act*.jsonl
+out_actions_*.jsonl
