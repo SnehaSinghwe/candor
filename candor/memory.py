@@ -1,4 +1,4 @@
-"""Question -> ranked retrieval -> grounded answer. LLM optional (ANTHROPIC_API_KEY / OPENAI_API_KEY)."""
+"""Question -> ranked retrieval -> grounded answer. Gemini answer writer optional (GEMINI_API_KEY)."""
 import json, re, sys
 from pathlib import Path
 from .ingest import load, visible, dt
