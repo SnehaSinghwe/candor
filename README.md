@@ -1,6 +1,6 @@
-# Candor take-home: time-aware memory + TextOS
+# Candor — Time-Aware Memory + TextOS
 
-Run everything: `./run_all.sh` (Python 3.10+). Core needs only the standard library; Gemini needs `pip install -r requirements.txt`. Outputs land in `out/`.
+A take-home implementation of a **time-aware memory system and TextOS action planner**. Candor ingests heterogeneous records, reconstructs memory as of a query time, retrieves and reranks relevant evidence, generates grounded answers with Google Gemini, and converts natural-language action requests into safe dry-run plans.
 
 ## LLM provider
 Google Gemini, via the official `google-genai` SDK. Default model `gemini-3.5-flash-lite`. The LLM only writes the final answer from
@@ -13,19 +13,12 @@ already-retrieved evidence; BM25 retrieval, time filtering and safety filters ar
 | `GEMINI_API_KEY` | your Gemini API key (never commit it) |
 | `GEMINI_MODEL` | model name, default `gemini-3.5-flash-lite` (model access varies by account) |
 
-### Setup
-```
-pip install -r requirements.txt        # only needed for the Gemini path
-cp .env.example .env                   # then edit .env locally and fill in GEMINI_API_KEY=...
-```
-`.env` is git-ignored. `.env.example` has no secret.
+| Variable         | Purpose                                                |
+| ---------------- | ------------------------------------------------------ |
+| `GEMINI_API_KEY` | Gemini API key; keep this local and never commit it    |
+| `GEMINI_MODEL`   | Gemini model name; defaults to `gemini-3.5-flash-lite` |
 
-### Running
-```
-./run_all.sh                                   # train questions + actions + scorers, outputs in out/
-./run_all.sh questions.jsonl answers.jsonl     # hidden/other questions
-python3 assistant.py                           # text assistant (dry-run)
-```
+Model availability can vary by Google account/project.
 
 ### macOS / Linux / Windows
 Works on macOS (Intel and Apple Silicon), Linux and Windows (Git Bash). All paths are relative and all file I/O is explicit UTF-8.
@@ -46,6 +39,20 @@ If `GEMINI_API_KEY` is missing, or `google-genai` is not installed, or a Gemini 
 output), the pipeline does not crash. It prints a `[candor] Gemini ...` line to stderr and uses the extractive fallback for that
 question. Retrieval and actions are unaffected. Output JSONL schema is identical in both modes.
 
+Candor is designed to remain runnable when Gemini is unavailable.
+
+If:
+
+* `GEMINI_API_KEY` is missing,
+* `google-genai` is not installed,
+* the selected model is unavailable,
+* a request fails,
+* a rate limit is reached, or
+* Gemini returns malformed output,
+
+the affected question falls back to the deterministic extractive answer path rather than crashing the pipeline.
+
+Retrieval and action planning continue to work independently.
 
 ## Architecture
 1. **Ingest** (`candor/ingest.py`): every source becomes a `Unit` with the most specific citable id (meeting segment, Slack message,
