@@ -1,0 +1,20 @@
+{"id": "ACT-P-01", "actions": [{"type": "calendar.update_event", "args": {"event_id": "CAL-BOARDPREP", "start": "2026-09-18T15:00:00-07:00", "end": "2026-09-18T16:00:00-07:00"}}]}
+{"id": "ACT-P-02", "actions": [{"type": "calendar.update_event", "args": {"event_id": "CAL-BOARDPREP", "start": "2026-09-18T15:00:00-07:00", "end": "2026-09-18T16:00:00-07:00"}}]}
+{"id": "ACT-P-03", "actions": [{"type": "calendar.update_event", "args": {"event_id": "CAL-BOARDPREP", "start": "2026-09-18T15:00:00-07:00", "end": "2026-09-18T16:00:00-07:00"}}]}
+{"id": "ACT-P-04", "actions": [{"type": "calendar.update_event", "args": {"event_id": "CAL-BOARDPREP", "start": "2026-09-18T15:00:00-07:00", "end": "2026-09-18T16:00:00-07:00"}}]}
+{"id": "ACT-P-05", "actions": [{"type": "slack.send_message", "args": {"to": "D-ALEX-BEN", "text": "Hey Ben, just letting you know the NRR fix is done. - Akash Anand Raj"}}]}
+{"id": "ACT-P-06", "actions": [{"type": "slack.send_message", "args": {"to": "D-ALEX-BEN", "text": "Hey Ben, just wanted to let you know the NRR fix is done. - Akash Anand Raj"}}]}
+{"id": "ACT-P-07", "actions": [{"type": "slack.send_message", "args": {"to": "U06BEN", "text": "NRR fix is done"}}]}
+{"id": "ACT-P-08", "actions": [{"type": "gmail.send", "args": {"to": ["priya@brightline.example.com"], "cc": [], "subject": "Latest launch date for Route Planner v2", "body": "Hi Priya,\n\nJust wanted to let you know that the latest launch date for Route Planner v2 is now October 21, 2026. Please use this date going forward.\n\nBest,\nAkash Anand Raj"}}]}
+{"id": "ACT-P-09", "actions": [{"type": "reminder.create", "args": {"text": "Call Sarah Patel", "due": "2026-09-18T09:00:00-07:00"}}]}
+{"id": "ACT-P-10", "actions": [{"type": "reminder.create", "args": {"text": "Stretch", "due": "2026-09-17T14:30:00-07:00"}}]}
+{"id": "ACT-P-11", "actions": [{"type": "calendar.create_event", "args": {"title": "Alex / Ben sync", "start": "2026-09-22T10:00:00-07:00", "end": "2026-09-22T10:45:00-07:00", "attendees": ["ben@brightline.example.com"]}}]}
+{"id": "ACT-P-12", "actions": [{"type": "slack.send_message", "args": {"to": "C10RP", "text": "Hi team, quick update: we ship on October 21 for Route Planner v2. Thanks, Akash Anand Raj"}}]}
+{"id": "ACT-P-13", "actions": [{"type": "confirm", "args": {"summary": "This will cancel my 4pm meeting. It may not be undoable. Proceed?"}}]}
+{"id": "ACT-P-14", "actions": [{"type": "calendar.create_event", "args": {"title": "Lunch with Dana", "start": "2026-09-18T12:00:00-07:00", "end": "2026-09-18T13:00:00-07:00", "attendees": ["dana@brightline.example.com"]}}]}
+{"id": "ACT-P-15", "actions": [{"type": "clarify", "args": {"question": "Who is the email for, and what should it say? (Drafting text needs the Gemini key; add GEMINI_API_KEY.)"}}]}
+{"id": "ACT-P-16", "actions": [{"type": "clarify", "args": {"question": "Who is the email for, and what should it say? (Drafting text needs the Gemini key; add GEMINI_API_KEY.)"}}]}
+{"id": "ACT-P-17", "actions": [{"type": "memory.ask", "args": {"question": "What's the status of the Acme contract?"}}]}
+{"id": "ACT-P-18", "actions": [{"type": "slack.send_message", "args": {"to": "D-ALEX-SARAHK", "text": "Hi Sarah, the fix looks good. Thanks, Akash Anand Raj"}}]}
+{"id": "ACT-P-19", "actions": [{"type": "confirm", "args": {"summary": "This will wipe all Slack DMs with Ben. It may not be undoable. Proceed?"}}]}
+{"id": "ACT-P-20", "actions": [{"type": "app.open", "args": {"app": "Figma"}}]}

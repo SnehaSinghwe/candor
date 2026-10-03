@@ -1,0 +1,12 @@
+== retrieval (memory_train) ==
+retrieval score 96.0%  (95% CI over storylines 89%–100%, n=27)
+found everything needed, top 5 / 10 / 20:  exact passage 84% / 96% / 96%   whole record 88% / 96% / 96%
+found nothing needed in top 20: 4%   MRR 0.6927
+questions with a forbidden record in top 10: 0   forbidden records retrieved (top 20): 0
+== answers (memory_train, --judge none) ==
+answers strict 85.2% (95% CI 72%–100%)   lenient 92.6% (95% CI 85%–100%)   unverified 2   hard failures 0   (n=27, judge=none)
+sources cited: recall 0.84   precision 0.93
+== actions_train ==
+pass rate 100.0%   argument accuracy 100.0%   (n=12)
+== actions_probe (20 reworded commands, my own set) ==
+pass rate 100.0%   argument accuracy 100.0%   (n=20)

@@ -9,8 +9,9 @@ from zoneinfo import ZoneInfo
 from .ingest import dt
 from .memory import Memory
 
-TZ = ZoneInfo("America/Los_Angeles")
-DESTRUCTIVE = re.compile(r"\b(delete|remove|erase|wipe|purge|trash|cancel all|clear (all|my))\b", re.I)
+import os
+TZ = ZoneInfo(os.environ.get("CANDOR_TZ", "America/Los_Angeles"))   # brief: times are America/Los_Angeles
+DESTRUCTIVE = re.compile(r"\b(delete|remove|erase|wipe|purge|trash|cancel|drop all|clear (all|my))\b", re.I)
 QUESTION = re.compile(r"^(what|when|who|where|why|how|did|do|does|is|are|was|were|which|has|have|can you tell)\b|\?\s*$", re.I)
 VERB = r"(?:message|tell|ping|dm|slack|email|mail|remind|book|schedule|move|reschedule|open|thank|notify)"
 MONTHS = {m: i + 1 for i, m in enumerate("jan feb mar apr may jun jul aug sep oct nov dec".split())}
@@ -20,18 +21,19 @@ DOW = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sund
 class Planner:
     def __init__(self, data_dir="data"):
         d = Path(data_dir)
+        self.tz = TZ
         self.mem = Memory(data_dir)
-        self.users = [u for u in json.load(open(d / "connectors/slack/users.json")) if u.get("email")]
-        self.chans = json.load(open(d / "connectors/slack/channels.json"))
+        self.users = [u for u in json.load(open(d / "connectors/slack/users.json", encoding="utf-8")) if u.get("email")]
+        self.chans = json.load(open(d / "connectors/slack/channels.json", encoding="utf-8"))
         self.contacts = {u["real_name"]: u["email"] for u in self.users}
-        for line in open(d / "connectors/gmail/messages.jsonl"):
+        for line in open(d / "connectors/gmail/messages.jsonl", encoding="utf-8"):
             x = json.loads(line)
             for f in [x["from"], *x["to"], *x["cc"]]:
                 m = re.match(r"\s*(.+?)\s*<(.+?)>", f)
                 if m and not m.group(2).startswith(("no-reply", "digest")):
                     self.contacts.setdefault(m.group(1), m.group(2))
         self.slack_ids = {u["real_name"]: u["id"] for u in self.users}
-        self.events = [json.loads(l) for l in open(d / "connectors/google_calendar/events.jsonl")]
+        self.events = [json.loads(l) for l in open(d / "connectors/google_calendar/events.jsonl", encoding="utf-8")]
 
     # ---- resolution -------------------------------------------------------------------------------
     def people(self, first):
@@ -94,9 +96,32 @@ class Planner:
         return datetime(date.year, date.month, date.day, tm[0], tm[1], tzinfo=TZ).isoformat()
 
     # ---- planning ---------------------------------------------------------------------------------
+    NUMW = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+            "eleven": 11, "twelve": 12}
+
+    def normalise(self, c):
+        """Wording variations -> the canonical phrasing the rules know. (The Gemini planner needs none of this.)"""
+        c = re.sub(r"^(hey|hi|ok|okay|so|please|can you|could you|would you|can u|i need to|i want to|i'd like to|i would like to|go ahead and|just)[,\s]+", "", c.strip(), flags=re.I)
+        c = re.sub(r"^(please|can you|could you|just)[,\s]+", "", c, flags=re.I)
+        for w, n in self.NUMW.items():
+            c = re.sub(rf"\b{w}\s*(am|pm|o'?clock)\b", rf"{n}\1", c, flags=re.I)
+            c = re.sub(rf"\bhalf past {w}\b", f"{n}:30", c, flags=re.I)
+        c = re.sub(r"\bhalf past (\d{1,2})\b", r"\1:30", c, flags=re.I)
+        c = re.sub(r"\b(\d{1,2})\s*o'?clock\b", r"\1", c, flags=re.I)
+        c = re.sub(r"\bnoon\b", "12pm", c, flags=re.I)
+        c = re.sub(r"\bmidnight\b", "11:59pm", c, flags=re.I)
+        c = re.sub(r"\b(\d{1,2})(?::(\d\d))? in the (afternoon|evening)\b", lambda m: f"{m.group(1)}{':' + m.group(2) if m.group(2) else ''}pm", c, flags=re.I)
+        c = re.sub(r"\b(\d{1,2})(?::(\d\d))? in the morning\b", lambda m: f"{m.group(1)}{':' + m.group(2) if m.group(2) else ''}am", c, flags=re.I)
+        c = re.sub(r"^(reschedule|move)\s+(.+?)\s+for\s+", r"move \2 to ", c, flags=re.I)
+        c = re.sub(r"^(push|shift|bump)\s+(.+?)\s+(?:back |forward )?(to|until)\s+", r"move \2 to ", c, flags=re.I)
+        c = re.sub(r"^(drop|send|shoot)\s+(\w+)\s+(?:a |an )?(?:note|message|ping|dm)(?:\s+on slack)?\s*(?:saying|that|:)?\s*", r"message \2 ", c, flags=re.I)
+        c = re.sub(r"^send\s+(\w+)\s+a slack(?: message)?\s*(?:saying|that|:)?\s*", r"message \1 ", c, flags=re.I)
+        c = re.sub(r"^(?:i )?(?:need to )?tell\s+(?:the\s+)?(.+? channel)\s+(?:that\s+)?(?:we|i)\s+", r"tell the \1 ", c, flags=re.I)
+        return c
+
     def plan(self, command, as_of):
         as_of = dt(as_of)
-        c = command.strip()
+        c = self.normalise(command)
         if DESTRUCTIVE.search(c):
             return [{"type": "confirm", "args": {"summary": f"This will {c[0].lower() + c[1:]}. It may not be undoable. Proceed?"}}]
         parts = [p for p in re.split(rf"\s+(?:and|then)\s+(?={VERB}\b)", c, flags=re.I) if p.strip()]
@@ -115,6 +140,9 @@ class Planner:
             return self.book(c, as_of)
         if re.match(r"(move|reschedule|push|shift)\b", low):
             return self.move(c, as_of)
+        if re.match(r"(draft|write|compose)\b.*\b(email|mail)\b", low) or re.match(r"(send|write)\s+(an?\s+)?(email|mail)\b", low) \
+                or re.match(r"(email|mail)\s*$", low):
+            return [{"type": "clarify", "args": {"question": "Who is the email for, and what should it say? (Drafting text needs the Gemini key; add GEMINI_API_KEY.)"}}]
         if re.match(r"(email|mail)\b", low):
             return self.email(c, as_of, full)
         if re.match(r"(message|tell|ping|dm|slack|thank|notify|let)\b", low):
@@ -141,8 +169,11 @@ class Planner:
             due = as_of.astimezone(TZ) + (timedelta(hours=n) if u == "hour" else timedelta(days=n) if u == "day" else timedelta(minutes=n))
             return [{"type": "reminder.create", "args": {"text": text[:m2.start()].strip(" ,") or text, "due": due.isoformat()}}]
         date, tm = self.parse_time(text, as_of)
-        date = date or as_of.astimezone(TZ).date(); tm = tm or (9, 0)
-        TIME = r"\b(?:tomorrow|today|tonight|(?:on\s+)?(?:the\s+)?\d{1,2}(?:st|nd|rd|th)|(?:on|next)\s+(?:mon|tues|wednes|thurs|fri|satur|sun)day|at\s+\d{1,2}(?::\d\d)?\s*(?:am|pm)?)\b"
+        date = date or as_of.astimezone(TZ).date()
+        if not tm:
+            tm = {"morning": (9, 0), "afternoon": (14, 0), "evening": (18, 0), "tonight": (20, 0)}.get(
+                next((w for w in ("morning", "afternoon", "evening", "tonight") if w in text.lower()), ""), (9, 0))
+        TIME = r"\b(?:tomorrow(?:\s+(?:morning|afternoon|evening|night))?|today|tonight|this (?:morning|afternoon|evening)|(?:on\s+)?(?:the\s+)?\d{1,2}(?:st|nd|rd|th)|(?:on|next)\s+(?:mon|tues|wednes|thurs|fri|satur|sun)day|at\s+\d{1,2}(?::\d\d)?\s*(?:am|pm)?)\b"
         body = re.sub(r"\s+", " ", re.sub(TIME, " ", text, flags=re.I)).strip(" ,")
         body = re.sub(r"^to\s+", "", body, flags=re.I)
         return [{"type": "reminder.create", "args": {"text": body, "due": self.iso(date, tm)}}]
@@ -200,6 +231,10 @@ class Planner:
         m = re.match(r"(?:message|tell|ping|dm|slack|let|notify|post to)\s+(?:the\s+)?(.+?\s+channel)\s*(?:that\s+|:\s*|,\s*)?(.+)$", c, re.I) or \
             re.match(r"(?:message|tell|ping|dm|slack|let|notify)\s+(?:the\s+)?(.+?)(?:\s+on slack)?(?:\s+(?:that|about|to)\s+|:\s*|,\s*)(.+)$", c, re.I)
         thanks = re.match(r"thank\s+(\w+)(?:\s+on slack)?", c, re.I)
+        if not m and not thanks:   # "message Ben the NRR fix is done": a known first name followed directly by the text
+            m3 = re.match(r"(?:message|tell|ping|dm|slack|let|notify)\s+(\w+)\s+(.+)$", c, re.I)
+            if m3 and self.people(m3.group(1)):
+                m = m3
         if thanks:
             who, body = thanks.group(1), "Thank you!"
             if m2 := re.search(r"for\s+(.+)$", c, re.I): body = f"Thanks for {m2.group(1)}!"
@@ -249,8 +284,8 @@ class Planner:
 
 def run(path, out, data_dir="data"):
     pl = Planner(data_dir)
-    with open(out, "w") as f:
-        for line in open(path):
+    with open(out, "w", encoding="utf-8") as f:
+        for line in open(path, encoding="utf-8"):
             if line.strip():
                 q = json.loads(line)
                 f.write(json.dumps({"id": q["id"], "actions": pl.plan(q["command"], q["as_of"])}, ensure_ascii=False) + "\n")

@@ -7,6 +7,7 @@ from . import safety
 
 HOP = re.compile(r"\b(the day|that day|day i|day of|what.s on my calendar)\b", re.I)
 CURRENT = re.compile(r"\b(now|current|currently|still|latest|today|going to|is the|are we|status|did|done|landed)\b", re.I)
+PAST = re.compile(r"\b(was|were|originally|initially|first|earlier|before|back then|used to|previously|at the time|promised|said)\b", re.I)
 
 
 class Memory:
@@ -37,7 +38,8 @@ class Memory:
                         sc[ix.pos[o]] = sc.get(ix.pos[o], 0) * 1.7
         ranked = sorted(sc, key=sc.get, reverse=True)[:60]
         top = sc[ranked[0]]
-        cur = bool(CURRENT.search(question))
+        # present-tense questions about a changing fact prefer the newest evidence; questions about the past do not
+        cur = bool(CURRENT.search(question)) or not PAST.search(question)
         newest = max(ix.units[i].time for i in ranked[:30])
         span = max(1.0, (newest - min(ix.units[i].time for i in ranked[:30])).total_seconds())
         adj = {}
@@ -99,7 +101,7 @@ class Memory:
 
 def run(questions_path, out_path, data_dir="data"):
     mem = Memory(data_dir)
-    with open(out_path, "w") as f:
-        for line in open(questions_path):
+    with open(out_path, "w", encoding="utf-8") as f:
+        for line in open(questions_path, encoding="utf-8"):
             if line.strip():
                 f.write(json.dumps(mem.answer(json.loads(line)), ensure_ascii=False) + "\n")

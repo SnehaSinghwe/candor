@@ -1,3 +1,25 @@
+# secrets and local config: never commit
 .env
+credentials.json
+token.json
+candor_outbox/
+
+# python / editor
 __pycache__/
+.venv/
+.vscode/
+.DS_Store
+
+# generated scratch output
 results_*.json
+out_act*.jsonl
+out_actions_*.jsonl
+out/test_*.jsonl
+out/README.txt
+run_log.txt
+*.wav
+*.mp3
+
+# not part of the public repo
+BRIEF.md
+SUBMISSION.md

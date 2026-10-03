@@ -1,6 +1,0 @@
-{"id": "ACT-X-01", "actions": [{"type": "slack.send_message", "args": {"to": "U04DANA", "text": "The board deck is ready for review."}}]}
-{"id": "ACT-X-02", "actions": [{"type": "slack.send_message", "args": {"to": "C11SALES", "text": "Harbor demo is rescheduled."}}]}
-{"id": "ACT-X-03", "actions": [{"type": "reminder.create", "args": {"text": "call the dentist", "due": "2026-09-18T08:00:00-07:00"}}]}
-{"id": "ACT-X-04", "actions": [{"type": "calendar.create_event", "args": {"title": "the ETA prototype", "start": "2026-09-21T10:00:00-07:00", "end": "2026-09-21T10:30:00-07:00", "attendees": ["priya@brightline.example.com"]}}]}
-{"id": "ACT-X-05", "actions": [{"type": "memory.ask", "args": {"question": "Who owns the onboarding mockups?"}}]}
-{"id": "ACT-X-06", "actions": [{"type": "confirm", "args": {"summary": "This will wipe all Slack DMs with Ben. It may not be undoable. Proceed?"}}]}
